@@ -46,9 +46,9 @@ class btce_connection(object):
         headers = {"Content-type": "application/x-www-form-urlencoded",
                    "Key":self.api_key,
                    "Sign":signature}
-        self.result = requests.post(self.api_url,data=databytes,headers=headers)
         #make sure we got valid data back.
         try:
+            self.result = requests.post(self.api_url,data=databytes,headers=headers)
             self.result.json()
         except:
             #recursive retry
@@ -71,6 +71,7 @@ class btce_connection(object):
         #type is buy or sell (coresponds to buying or selling the first currency in the pair.
         #price and amount is amount of first currency to trade, at price*second currency each.
         data={'method':'Trade','pair':market_pair,'type':trade_type,'rate':price,'amount':amount}
+        #print(data)
         self.submit(data)
         values = self.result.json()
         if values['success'] == 1:
@@ -101,7 +102,7 @@ class rebalance(object):
         self.c1 = currency1.lower()
         self.c2 = currency2.lower()
         self.percentage = percentage
-        self.fee = 0.002
+        self.fee = 1.002004 #this multiplier acts to allow the buy order to actually net what you expect...
         self.connection = btce_connection(key,sec)
         self.connection.getinfo()
         self.amount = amount
@@ -122,9 +123,9 @@ class rebalance(object):
         #margins should be either adjustable, or more inteligently set.
         self.buy_price = round(temp_price * self.buy_multi,5)
         self.sell_price = round(temp_price * self.sell_multi,5)
-        print('our price is ${}'.format(self.our_price))
-        print("portfolio value {} {}".format(self.connection.funds[self.c2]+(self.our_price * self.connection.funds[self.c1]),self.c2))
-        self.buy=self.connection.trade(self.market,'buy',self.buy_price,self.amount)
+        print('we think 1 {} is worth {} {}'.format(self.c1,self.our_price,self.c2))
+        print("we have {} {} and {} {} worth a total of {} {}".format(self.connection.funds[self.c1],self.c1, self.connection.funds[self.c2],self.c2,self.connection.funds[self.c2]+round(self.our_price * self.connection.funds[self.c1],8),self.c2))
+        self.buy=self.connection.trade(self.market,'buy',self.buy_price,round(self.amount*self.fee,8)) #adds in the fee so that a buy nets the amount expected
         if self.buy == 0:
             print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%I:%M:%S %p'),self.amount,self.c1,self.buy_price,self.c2))
             return
@@ -177,3 +178,4 @@ if __name__ == "__main__":
     
     while True:
         re.trade()
+        time.sleep(30)
