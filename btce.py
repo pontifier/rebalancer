@@ -2,6 +2,7 @@ import hmac, hashlib
 import urllib.parse
 import requests, json
 import time
+import sys
 
 
 key = "" #your btc-e.com API key
@@ -55,6 +56,10 @@ class btce_connection(object):
             print('[ {} ] Invalid Server Response'.format(time.strftime('%I:%M:%S %p')))
             time.sleep(30)
             self.submit(data)
+        if self.result.json()['success'] is 0:
+            print('sent:',data)
+            print(self.result.json())
+            sys.exit(0)
     def update_balances(self,funds):
         self.funds = {}
         for key,value in funds.items():
@@ -112,6 +117,7 @@ class rebalance(object):
     def get_price(self):
         self.connection.getinfo()
     def trade(self):
+        dp = 3 #decimal places to send
         #calculate our price
         self.get_price()
         # should do divide by zero check here...
@@ -119,13 +125,13 @@ class rebalance(object):
             temp_price = (self.connection.funds[self.c2]/self.percentage - self.connection.funds[self.c2])/self.connection.funds[self.c1]
         except:
             temp_price = 1000
-        self.our_price = round(temp_price,5)
+        self.our_price = round(temp_price,dp)
         #margins should be either adjustable, or more inteligently set.
-        self.buy_price = round(temp_price * self.buy_multi,5)
-        self.sell_price = round(temp_price * self.sell_multi,5)
+        self.buy_price = round(temp_price * self.buy_multi,dp)
+        self.sell_price = round(temp_price * self.sell_multi,dp)
         print('we think 1 {} is worth {} {}'.format(self.c1,self.our_price,self.c2))
         print("we have {} {} and {} {} worth a total of {} {}".format(self.connection.funds[self.c1],self.c1, self.connection.funds[self.c2],self.c2,self.connection.funds[self.c2]+round(self.our_price * self.connection.funds[self.c1],8),self.c2))
-        self.buy=self.connection.trade(self.market,'buy',self.buy_price,round(self.amount*self.fee,8)) #adds in the fee so that a buy nets the amount expected
+        self.buy=self.connection.trade(self.market,'buy',self.buy_price,round(self.amount*self.fee,dp)) #adds in the fee so that a buy nets the amount expected
         if self.buy == 0:
             print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%I:%M:%S %p'),self.amount,self.c1,self.buy_price,self.c2))
             return
@@ -155,7 +161,7 @@ class rebalance(object):
         
 if __name__ == "__main__":
     
-    re = rebalance('xpm','btc',0.5,0.02,0.1)
+    re = rebalance('btc','usd',0.5,0.05,0.01)
     # Change this line to change how the bot works
     # the parameters in order are:
     # First currency
