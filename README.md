@@ -4,15 +4,18 @@ I was able to run it and see it working, but it only ran for a couple of hours b
 I have now re-built it to work with BTC-E
 
 Usage:
-add your BTC-E api key and secret to btce.py
-edit the rebalancer call in the main function to use your desired currency pair, ratio, spread multiplier, and trade amount.
+    add your BTC-E api key and secret to btce.py
+    edit the rebalancer call in the main function to use your desired currency pair, ratio, spread multiplier, and trade amount.
+    For best results, balance your account manualy before starting the bot.
+
 python3 btce.py
+
 
 This bot uses a technique called rebalancing to calculate trades to make on your behalf.
 
-First your acount balance in XPM and BTC are retrieved.
-A price for XPM is calculated that would balance your account with the specified ratio.
-2 trades for 0.1 XPM each are entered on either side of this value.
+First your acount balance in USD and BTC are retrieved.
+A price for USD is calculated that would balance your account with the specified ratio.
+2 trades for 0.01 BTC each are entered on either side of this value.
 The trades are checked every 60 seconds to see if they have been filled.
 If one trade is filled, the other trade is canceled.
 
