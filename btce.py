@@ -7,6 +7,8 @@ import sys
 
 key = "" #your btc-e.com API key
 sec = "" #your btc-e.com secret
+VERBOSE_TRADES = True
+REPORT_SERVER_ERRORS = False
 
 # important:
 # This program can lose all your funds easily.
@@ -53,7 +55,8 @@ class btce_connection(object):
             self.result.json()
         except:
             #recursive retry
-            print('[ {} ] Invalid Server Response'.format(time.strftime('%I:%M:%S %p')))
+            if REPORT_SERVER_ERRORS:
+                print('[ {} ] Invalid Server Response'.format(time.strftime('%x %r')))
             time.sleep(30)
             self.submit(data)
         if self.result.json()['success'] is 0:
@@ -113,7 +116,10 @@ class rebalance(object):
         self.amount = amount
         self.buy_multi = 1 - spread
         self.sell_multi = 1 + spread
-        
+
+        #oscillation protection
+        self.has_traded = False
+
     def get_price(self):
         self.connection.getinfo()
     def trade(self):
@@ -129,16 +135,25 @@ class rebalance(object):
         #margins should be either adjustable, or more inteligently set.
         self.buy_price = round(temp_price * self.buy_multi,dp)
         self.sell_price = round(temp_price * self.sell_multi,dp)
-        print('we think 1 {} is worth {} {}'.format(self.c1,self.our_price,self.c2))
-        print("we have {} {} and {} {} worth a total of {} {}".format(self.connection.funds[self.c1],self.c1, self.connection.funds[self.c2],self.c2,self.connection.funds[self.c2]+round(self.our_price * self.connection.funds[self.c1],8),self.c2))
-        self.buy=self.connection.trade(self.market,'buy',self.buy_price,round(self.amount*self.fee,dp)) #adds in the fee so that a buy nets the amount expected
+
+        #check for oscillation
+        if self.has_traded:
+            if self.last_trade_type is 'buy' and self.sell_price < self.last_trade_price:
+                raise Exception(' Oscillation prevented! Check your trade settings, or increase your account balance! ')
+            if self.last_trade_type is 'sell' and self.buy_price > self.last_trade_price:
+                raise Exception(' Oscillation prevented! Check your trade settings, or increase your account balance! ')
+
+        if VERBOSE_TRADES:
+            print('we think 1 {} is worth {} {}'.format(self.c1,self.our_price,self.c2))
+            print("we have {} {} and {} {} worth a total of {} {}".format(self.connection.funds[self.c1],self.c1, self.connection.funds[self.c2],self.c2,self.connection.funds[self.c2]+round(self.our_price * self.connection.funds[self.c1],8),self.c2))
+        self.buy=self.connection.trade(self.market,'buy',self.buy_price,self.amount*self.fee) #adds in the fee so that a buy nets the amount expected
         if self.buy == 0:
-            print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%I:%M:%S %p'),self.amount,self.c1,self.buy_price,self.c2))
+            print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%x %r'),self.amount,self.c1,self.buy_price,self.c2))
             return
         self.sell=self.connection.trade(self.market,'sell',self.sell_price,self.amount)
         #print("our orders are buy={}, sell={}".format(self.buy,self.sell))
         if self.sell == 0:
-            print('[ {} ] sold {} {} at {} {}'.format(time.strftime('%I:%M:%S %p'),self.amount,self.c1,self.sell_price,self.c2))
+            print('[ {} ] sold {} {} at {} {}'.format(time.strftime('%x %r'),self.amount,self.c1,self.sell_price,self.c2))
             self.connection.cancel(self.buy)
             return
         
@@ -146,12 +161,18 @@ class rebalance(object):
             orders = self.connection.orders()
             if orders.keys().__contains__(self.buy.__str__()) == False:
                 # our buy order was filled
-                print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%I:%M:%S %p'),self.amount,self.c1,self.buy_price,self.c2))
+                self.has_traded = True
+                self.last_trade_type = 'buy'
+                self.last_trade_price = self.buy_price
+                print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%x %r'),self.amount,self.c1,self.buy_price,self.c2))
                 self.connection.cancel(self.sell)
                 return
             if orders.keys().__contains__(self.sell.__str__()) == False:
                 # our sell order was filled
-                print('[ {} ] sold {} {} at {} {}'.format(time.strftime('%I:%M:%S %p'),self.amount,self.c1,self.sell_price,self.c2))
+                self.has_traded = True
+                self.last_trade_type = 'sell'
+                self.last_trade_price = self.sell_price
+                print('[ {} ] sold {} {} at {} {}'.format(time.strftime('%x %r'),self.amount,self.c1,self.sell_price,self.c2))
                 self.connection.cancel(self.buy)
                 return
             #print("got {}, and all our orders were still there".format(orders))
