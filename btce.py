@@ -148,11 +148,17 @@ class rebalance(object):
             print("we have {} {} and {} {} worth a total of {} {}".format(self.connection.funds[self.c1],self.c1, self.connection.funds[self.c2],self.c2,self.connection.funds[self.c2]+round(self.our_price * self.connection.funds[self.c1],8),self.c2))
         self.buy=self.connection.trade(self.market,'buy',self.buy_price,self.amount*self.fee) #adds in the fee so that a buy nets the amount expected
         if self.buy == 0:
+            self.has_traded = True
+            self.last_trade_type = 'buy'
+            self.last_trade_price = self.buy_price
             print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%x %r'),self.amount,self.c1,self.buy_price,self.c2))
             return
         self.sell=self.connection.trade(self.market,'sell',self.sell_price,self.amount)
         #print("our orders are buy={}, sell={}".format(self.buy,self.sell))
         if self.sell == 0:
+            self.has_traded = True
+            self.last_trade_type = 'sell'
+            self.last_trade_price = self.sell_price
             print('[ {} ] sold {} {} at {} {}'.format(time.strftime('%x %r'),self.amount,self.c1,self.sell_price,self.c2))
             self.connection.cancel(self.buy)
             return
