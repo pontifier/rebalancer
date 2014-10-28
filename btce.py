@@ -7,6 +7,7 @@ import sys
 
 key = "" #your btc-e.com API key
 sec = "" #your btc-e.com secret
+SHOW_ACCOUNT_INFO = True
 VERBOSE_TRADES = True
 REPORT_SERVER_ERRORS = False
 
@@ -143,9 +144,12 @@ class rebalance(object):
             if self.last_trade_type is 'sell' and self.buy_price > self.last_trade_price:
                 raise Exception(' Oscillation prevented! Check your trade settings, or increase your account balance! ')
 
-        if VERBOSE_TRADES:
-            print('we think 1 {} is worth {} {}'.format(self.c1,self.our_price,self.c2))
+        if SHOW_ACCOUNT_INFO:
             print("we have {} {} and {} {} worth a total of {} {}".format(self.connection.funds[self.c1],self.c1, self.connection.funds[self.c2],self.c2,self.connection.funds[self.c2]+round(self.our_price * self.connection.funds[self.c1],8),self.c2))
+
+        if VERBOSE_TRADES:
+            print('we think 1 {} is worth {} {}. Trying to buy at {}, sell at {}'.format(self.c1, self.our_price, self.c2, self.buy_price, self.sell_price))
+
         self.buy=self.connection.trade(self.market,'buy',self.buy_price,self.amount*self.fee) #adds in the fee so that a buy nets the amount expected
         if self.buy == 0:
             self.has_traded = True
