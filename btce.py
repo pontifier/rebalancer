@@ -57,7 +57,7 @@ class btce_connection(object):
         except:
             #recursive retry
             if REPORT_SERVER_ERRORS:
-                print('[ {} ] Invalid Server Response'.format(time.strftime('%x %r')))
+                print('[ {} ] Invalid Server Response'.format(time.strftime('%x %X')))
             time.sleep(30)
             self.submit(data)
         if self.result.json()['success'] is 0:
@@ -155,7 +155,7 @@ class rebalance(object):
             self.has_traded = True
             self.last_trade_type = 'buy'
             self.last_trade_price = self.buy_price
-            print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%x %r'),self.amount,self.c1,self.buy_price,self.c2))
+            print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%x %X'),self.amount,self.c1,self.buy_price,self.c2))
             return
         self.sell=self.connection.trade(self.market,'sell',self.sell_price,self.amount)
         #print("our orders are buy={}, sell={}".format(self.buy,self.sell))
@@ -163,7 +163,7 @@ class rebalance(object):
             self.has_traded = True
             self.last_trade_type = 'sell'
             self.last_trade_price = self.sell_price
-            print('[ {} ] sold {} {} at {} {}'.format(time.strftime('%x %r'),self.amount,self.c1,self.sell_price,self.c2))
+            print('[ {} ] sold {} {} at {} {}'.format(time.strftime('%x %X'),self.amount,self.c1,self.sell_price,self.c2))
             self.connection.cancel(self.buy)
             return
         
@@ -174,7 +174,7 @@ class rebalance(object):
                 self.has_traded = True
                 self.last_trade_type = 'buy'
                 self.last_trade_price = self.buy_price
-                print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%x %r'),self.amount,self.c1,self.buy_price,self.c2))
+                print('[ {} ] bought {} {} at {} {}'.format(time.strftime('%x %X'),self.amount,self.c1,self.buy_price,self.c2))
                 self.connection.cancel(self.sell)
                 return
             if orders.keys().__contains__(self.sell.__str__()) == False:
@@ -182,7 +182,7 @@ class rebalance(object):
                 self.has_traded = True
                 self.last_trade_type = 'sell'
                 self.last_trade_price = self.sell_price
-                print('[ {} ] sold {} {} at {} {}'.format(time.strftime('%x %r'),self.amount,self.c1,self.sell_price,self.c2))
+                print('[ {} ] sold {} {} at {} {}'.format(time.strftime('%x %X'),self.amount,self.c1,self.sell_price,self.c2))
                 self.connection.cancel(self.buy)
                 return
             #print("got {}, and all our orders were still there".format(orders))
